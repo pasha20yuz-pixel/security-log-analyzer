@@ -1,0 +1,12 @@
+README.md
+pyproject.toml
+src/seclog/__init__.py
+src/seclog/analyzer.py
+src/seclog/cli.py
+src/seclog/parser.py
+src/security_log_analyzer.egg-info/PKG-INFO
+src/security_log_analyzer.egg-info/SOURCES.txt
+src/security_log_analyzer.egg-info/dependency_links.txt
+src/security_log_analyzer.egg-info/requires.txt
+src/security_log_analyzer.egg-info/top_level.txt
+tests/test_parser.py

@@ -1,0 +1,7 @@
+Metadata-Version: 2.4
+Name: security-log-analyzer
+Version: 0.1.0
+Summary: Python-based security log analyzer for detecting suspicious authentication activity.
+Requires-Python: >=3.11
+Provides-Extra: dev
+Requires-Dist: pytest<9.0,>=8.0; extra == "dev"
