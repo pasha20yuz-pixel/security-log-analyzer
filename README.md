@@ -2,49 +2,43 @@
 
 [![Tests](https://github.com/pasha20yuz-pixel/security-log-analyzer/actions/workflows/tests.yml/badge.svg)](https://github.com/pasha20yuz-pixel/security-log-analyzer/actions/workflows/tests.yml)
 
-CLI-инструмент на Python для анализа authentication logs и обнаружения подозрительной активности.
+A Python-based security log analyzer for detecting suspicious authentication activity.
 
-Проект разработан как портфолио-проект в области Python и информационной безопасности.
+The project parses authentication logs, analyzes login events, and detects common authentication attacks such as brute-force attempts and password spraying.
+
+This project was built as a portfolio project to demonstrate Python development, testing, Git/GitHub workflow, CLI development, and practical information security concepts.
 
 ## Features
 
-- Парсинг authentication logs
-- Обнаружение brute-force атак
-- Обнаружение password spraying
-- Настраиваемый порог количества попыток
-- Настраиваемое временное окно обнаружения
-- Человекочитаемый вывод
-- JSON-вывод
-- Валидация CLI-параметров
-- Автоматические тесты на pytest
+- Authentication log parsing
+- Brute-force attack detection
+- Password spraying detection
+- Configurable detection threshold
+- Configurable detection time window
+- Human-readable CLI output
+- JSON output
+- CLI argument validation
+- Invalid log data handling
+- Automated tests with pytest
+- 97.6% test coverage
+- Code quality checks with Ruff
+- GitHub Actions CI
 
-## Quick Start
-
-```bash
-git clone https://github.com/pasha20yuz-pixel/security-log-analyzer.git
-cd security-log-analyzer
-
-python -m venv .venv
-python -m pip install -e .
-
-python -m seclog.cli examples/auth.log
-```
-
-## Detection
+## Detection Capabilities
 
 ### Brute Force
 
-Brute-force обнаруживается, когда один пользователь получает несколько неудачных попыток входа с одного IP-адреса в заданном временном окне.
+Detects repeated failed login attempts against the same user from the same IP address within a configurable time window.
 
-Пример:
+Example:
 
 ```text
-admin ← 192.168.1.10
-admin ← 192.168.1.10
-admin ← 192.168.1.10
+admin <- 192.168.1.10
+admin <- 192.168.1.10
+admin <- 192.168.1.10
 ```
 
-Результат:
+Result:
 
 ```text
 [HIGH] BRUTE_FORCE
@@ -55,17 +49,17 @@ Failed attempts: 3
 
 ### Password Spraying
 
-Password spraying обнаруживается, когда один IP-адрес выполняет неудачные попытки входа для нескольких разных пользователей в заданном временном окне.
+Detects multiple failed login attempts against different users from the same IP address within a configurable time window.
 
-Пример:
+Example:
 
 ```text
-10.0.0.50 → admin
-10.0.0.50 → root
-10.0.0.50 → test
+10.0.0.50 -> admin
+10.0.0.50 -> root
+10.0.0.50 -> test
 ```
 
-Результат:
+Result:
 
 ```text
 [HIGH] PASSWORD_SPRAYING
@@ -74,56 +68,105 @@ IP: 10.0.0.50
 Failed attempts: 3
 ```
 
-## Installation
+## Architecture
 
-Клонировать репозиторий:
+```text
+                    Authentication Log
+                            |
+                            v
+                         Parser
+                            |
+                            v
+                       LogEvent[]
+                            |
+                            v
+                    Detection Engine
+                     /              \
+                    v                v
+              Brute Force     Password Spraying
+                    \                /
+                     \              /
+                      v            v
+                       SecurityAlert[]
+                              |
+                              v
+                             CLI
+                         /         \
+                        v           v
+                      Text        JSON
+```
+
+### Components
+
+- `parser.py` — parses raw authentication log lines into structured `LogEvent` objects and validates input.
+- `analyzer.py` — contains brute-force and password-spraying detection logic and creates `SecurityAlert` objects.
+- `cli.py` — provides the command-line interface, argument validation, file loading, and text/JSON output.
+
+## Project Structure
+
+```text
+security-log-analyzer/
+|
++-- .github/
+|   +-- workflows/
+|       +-- tests.yml
+|
++-- examples/
+|   +-- auth.log
+|
++-- src/
+|   +-- seclog/
+|       +-- __init__.py
+|       +-- analyzer.py
+|       +-- cli.py
+|       +-- parser.py
+|
++-- tests/
+|   +-- test_analyzer.py
+|   +-- test_cli.py
+|   +-- test_parser.py
+|
++-- .gitignore
++-- pyproject.toml
++-- README.md
++-- requirements.txt
+```
+
+## Requirements
+
+- Python 3.11+
+- Git
+- pytest
+- pytest-cov
+- Ruff
+
+The project currently has no external runtime dependencies.
+
+## Installation
 
 ```bash
 git clone https://github.com/pasha20yuz-pixel/security-log-analyzer.git
 cd security-log-analyzer
-```
-
-Создать виртуальное окружение:
-
-```bash
 python -m venv .venv
 ```
-
-Активировать виртуальное окружение.
 
 ### Windows PowerShell
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
-```
-
-Если выполнение PowerShell-скриптов ограничено политикой системы, можно использовать:
-
-```powershell
-.\.venv\Scripts\activate.bat
-```
-
-Установить проект:
-
-```bash
 python -m pip install -e .
-```
-
-Установить зависимости для тестирования:
-
-```bash
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
 ## Usage
 
-Базовый запуск:
+Run the analyzer against the example log:
 
 ```bash
 python -m seclog.cli examples/auth.log
 ```
 
-Пример результата:
+Example output:
 
 ```text
 Security Log Analyzer
@@ -149,29 +192,23 @@ Failed attempts: 3
 
 ## Configuration
 
-### Threshold
+### Detection Threshold
 
-Количество неудачных попыток, необходимое для создания alert:
+The default threshold is 3 failed attempts.
 
 ```bash
 python -m seclog.cli examples/auth.log --threshold 5
 ```
 
-По умолчанию:
+### Detection Time Window
 
-```text
-threshold = 3
-```
-
-### Time Window
-
-Временное окно обнаружения задаётся в секундах:
+The detection window is specified in seconds.
 
 ```bash
 python -m seclog.cli examples/auth.log --window 120
 ```
 
-Можно комбинировать параметры:
+Parameters can be combined:
 
 ```bash
 python -m seclog.cli examples/auth.log --threshold 5 --window 120
@@ -179,13 +216,11 @@ python -m seclog.cli examples/auth.log --threshold 5 --window 120
 
 ## JSON Output
 
-Для интеграции с другими инструментами можно использовать JSON:
-
 ```bash
 python -m seclog.cli examples/auth.log --format json
 ```
 
-Пример:
+Example:
 
 ```json
 {
@@ -219,114 +254,166 @@ python -m seclog.cli examples/auth.log --format json
 
 ## Testing
 
-Проект покрыт автоматическими тестами с использованием pytest.
-
-На текущем этапе проект содержит 18 автоматических тестов.
-
-Запуск:
+Run the complete test suite:
 
 ```bash
 python -m pytest
 ```
 
-Тесты проверяют:
-
-- корректный парсинг логов;
-- обработку некорректных данных;
-- обнаружение brute-force;
-- обнаружение password spraying;
-- работу временного окна;
-- пользовательские thresholds;
-- работу CLI;
-- CLI-параметры;
-- загрузку log-файлов;
-- преобразование alerts в JSON.
-
-## Project Structure
+Current result:
 
 ```text
-security-log-analyzer/
-│
-├── examples/
-│   └── auth.log
-│
-├── src/
-│   └── seclog/
-│       ├── __init__.py
-│       ├── analyzer.py
-│       ├── cli.py
-│       └── parser.py
-│
-├── tests/
-│   ├── test_analyzer.py
-│   ├── test_cli.py
-│   └── test_parser.py
-│
-├── .gitignore
-├── pyproject.toml
-├── README.md
-└── requirements.txt
+31 passed
 ```
 
-## Architecture
+The tests cover log parsing, invalid input, brute-force detection, password spraying, time windows, custom thresholds, state resets, CLI behavior, JSON output, and log-file loading.
 
-Проект разделён на несколько компонентов:
+## Test Coverage
+
+The current test coverage is **97.6%**.
+
+Run:
+
+```bash
+python -m pytest --cov=seclog --cov-report=term-missing
+```
+
+Current coverage:
 
 ```text
-                Authentication Log
-                        │
-                        ▼
-                     Parser
-                        │
-                        ▼
-                    LogEvent[]
-                        │
-                        ▼
-                 Detection Engine
-                  ┌─────┴─────┐
-                  ▼           ▼
-             Brute Force   Password
-                           Spraying
-                  │           │
-                  └─────┬─────┘
-                        ▼
-                  SecurityAlert[]
-                        │
-                        ▼
-                       CLI
-                   ┌────┴────┐
-                   ▼         ▼
-                 Text       JSON
+src\\seclog\\__init__.py       100%
+src\\seclog\\analyzer.py      100%
+src\\seclog\\cli.py           96%
+src\\seclog\\parser.py        94%
+TOTAL                           97.60%
 ```
 
-Такое разделение позволяет независимо расширять парсер, detection engine и интерфейс командной строки.
+The project requires at least 90% coverage in `pyproject.toml`.
 
-## Technologies
+## Code Quality
 
-- Python 3.11
-- pytest
-- argparse
-- JSON
-- Git
-- GitHub
+The project uses Ruff for static analysis and linting.
+
+```powershell
+.\.venv\Scripts\ruff.exe check .
+```
+
+Expected result:
+
+```text
+All checks passed!
+```
+
+## Continuous Integration
+
+GitHub Actions automatically runs the test suite using:
+
+```text
+.github/workflows/tests.yml
+```
+
+## Example Log Format
+
+The analyzer expects structured authentication events in the following form:
+
+```text
+timestamp EVENT_TYPE user=USERNAME ip=IP_ADDRESS
+```
+
+Example:
+
+```text
+2026-08-13 10:15:21 LOGIN_FAILED user=admin ip=192.168.1.10
+2026-08-13 10:15:31 LOGIN_FAILED user=admin ip=192.168.1.10
+2026-08-13 10:15:41 LOGIN_FAILED user=admin ip=192.168.1.10
+2026-08-13 10:16:00 LOGIN_SUCCESS user=admin ip=192.168.1.10
+```
+
+## Security Concepts Demonstrated
+
+- Authentication monitoring
+- Brute-force attacks
+- Password spraying
+- Suspicious login activity
+- Time-window based detection
+- Threshold-based detection
+- Event correlation
+- Security alert generation
+- Log analysis
+- Detection state management
+
+The project is focused on defensive security and security monitoring.
+
+## Design Principles
+
+### Separation of Concerns
+
+Parsing, detection logic, and CLI functionality are separated into different modules.
+
+### Structured Data
+
+Authentication events and security alerts are represented as structured Python objects instead of raw strings.
+
+### Configurable Detection
+
+Thresholds and time windows are configurable.
+
+### Testability
+
+The detection engine is separated from the CLI, making individual detection functions easy to test.
+
+### Input Validation
+
+Invalid input is rejected instead of silently producing potentially incorrect security results.
+
+## Technology Stack
+
+| Technology | Purpose |
+|---|---|
+| Python 3.11 | Core implementation |
+| `argparse` | CLI argument parsing |
+| `json` | Machine-readable output |
+| `pytest` | Automated testing |
+| `pytest-cov` | Test coverage |
+| Ruff | Static analysis and linting |
+| Git | Version control |
+| GitHub | Repository hosting |
+| GitHub Actions | Continuous integration |
+
+## Current Status
+
+The project currently provides:
+
+- Working authentication log parser
+- Brute-force detection
+- Password spraying detection
+- Configurable detection parameters
+- Human-readable CLI output
+- JSON output
+- 31 passing tests
+- 97.6% test coverage
+- Ruff checks
+- GitHub Actions CI
 
 ## Future Improvements
 
-Планируемые улучшения:
-
-- обнаружение account enumeration;
-- обнаружение подозрительных успешных входов;
-- дополнительные типы security alerts;
-- поддержка нескольких форматов логов;
-- экспорт результатов в файл;
-- более подробная информация об инцидентах;
-- CI через GitHub Actions;
-- расширение test coverage.
+- Account enumeration detection
+- Suspicious successful login detection
+- Additional authentication attack patterns
+- Support for additional log formats
+- Exporting alerts to files
+- More detailed incident information
+- Additional security alert types
+- Coverage improvements toward 100%
+- Additional CI quality checks
+- Performance improvements for large log files
 
 ## Author
 
 ### Pavel Yuzhalkin
 
-Saint Petersburg, Russia
+Information Security student at Peter the Great St. Petersburg Polytechnic University.
 
-[GitHub Repository](https://github.com/pasha20yuz-pixel/security-log-analyzer)
+GitHub: https://github.com/pasha20yuz-pixel
+
+Project repository: https://github.com/pasha20yuz-pixel/security-log-analyzer
