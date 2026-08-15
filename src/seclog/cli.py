@@ -93,10 +93,7 @@ def main() -> None:
         output = {
             "events_analyzed": len(events),
             "alerts_detected": len(alerts),
-            "alerts": [
-                alert_to_dict(alert)
-                for alert in alerts
-            ],
+            "alerts": [alert_to_dict(alert) for alert in alerts],
         }
 
         print(json.dumps(output, indent=2, ensure_ascii=False))

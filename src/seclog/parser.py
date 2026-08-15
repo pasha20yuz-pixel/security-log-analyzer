@@ -1,7 +1,6 @@
 import ipaddress
-
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 
 
 @dataclass(frozen=True)
@@ -10,6 +9,7 @@ class LogEvent:
     event_type: str
     username: str
     ip_address: str
+
 
 def parse_log_line(line: str) -> LogEvent:
     parts = line.strip().split()
@@ -44,7 +44,7 @@ def parse_log_line(line: str) -> LogEvent:
     timestamp = datetime.strptime(
         f"{date} {time}",
         "%Y-%m-%d %H:%M:%S",
-    )
+    ).replace(tzinfo=UTC)
 
     return LogEvent(
         timestamp=timestamp,

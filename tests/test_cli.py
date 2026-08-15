@@ -1,9 +1,10 @@
 import json
-import pytest
-from datetime import datetime
+from datetime import UTC, datetime
 
-from seclog.cli import load_events, alert_to_dict, build_parser, main
+import pytest
+
 from seclog.analyzer import SecurityAlert
+from seclog.cli import alert_to_dict, build_parser, load_events, main
 
 
 def test_alert_to_dict():
@@ -13,7 +14,7 @@ def test_alert_to_dict():
         username="admin",
         ip_address="192.168.1.10",
         failed_attempts=3,
-        timestamp=datetime(2026, 8, 13, 10, 15, 21),
+        timestamp=datetime(2026, 8, 13, 10, 15, 21, tzinfo=UTC,),
     )
 
     result = alert_to_dict(alert)
@@ -24,7 +25,7 @@ def test_alert_to_dict():
         "username": "admin",
         "ip_address": "192.168.1.10",
         "failed_attempts": 3,
-        "timestamp": "2026-08-13T10:15:21",
+        "timestamp": "2026-08-13T10:15:21+00:00",
     }
 
 
@@ -62,8 +63,7 @@ def test_load_events(tmp_path):
     log_file = tmp_path / "test.log"
 
     log_file.write_text(
-        "2026-08-13 10:15:21 "
-        "LOGIN_FAILED user=admin ip=192.168.1.10\n",
+        "2026-08-13 10:15:21 LOGIN_FAILED user=admin ip=192.168.1.10\n",
         encoding="utf-8",
     )
 
@@ -72,6 +72,7 @@ def test_load_events(tmp_path):
     assert len(events) == 1
     assert events[0].username == "admin"
     assert events[0].ip_address == "192.168.1.10"
+
 
 def test_load_events_skips_invalid_lines(tmp_path, capsys):
     log_file = tmp_path / "test.log"
@@ -92,6 +93,7 @@ def test_load_events_skips_invalid_lines(tmp_path, capsys):
 
     assert "Warning: line 1:" in captured.out
 
+
 def test_main_text_output(monkeypatch, capsys):
     monkeypatch.setattr(
         "sys.argv",
@@ -109,6 +111,7 @@ def test_main_text_output(monkeypatch, capsys):
     assert "Events analyzed: 17" in captured.out
     assert "Alerts detected: 6" in captured.out
     assert "[HIGH] BRUTE_FORCE" in captured.out
+
 
 def test_main_json_output(monkeypatch, capsys):
     monkeypatch.setattr(
@@ -133,6 +136,7 @@ def test_main_json_output(monkeypatch, capsys):
     assert result["alerts"][0]["alert_type"] == "BRUTE_FORCE"
     assert "timestamp" in result["alerts"][0]
 
+
 def test_main_custom_detection_parameters(monkeypatch, capsys):
     monkeypatch.setattr(
         "sys.argv",
@@ -153,6 +157,7 @@ def test_main_custom_detection_parameters(monkeypatch, capsys):
     assert "Events analyzed: 17" in captured.out
     assert "Alerts detected: 0" in captured.out
 
+
 def test_main_rejects_invalid_threshold(monkeypatch):
     monkeypatch.setattr(
         "sys.argv",
@@ -167,6 +172,7 @@ def test_main_rejects_invalid_threshold(monkeypatch):
     with pytest.raises(SystemExit):
         main()
 
+
 def test_main_rejects_invalid_window(monkeypatch):
     monkeypatch.setattr(
         "sys.argv",
@@ -179,4 +185,4 @@ def test_main_rejects_invalid_window(monkeypatch):
     )
 
     with pytest.raises(SystemExit):
-        main()    
+        main()

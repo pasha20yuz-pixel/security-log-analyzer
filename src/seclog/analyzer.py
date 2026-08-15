@@ -3,20 +3,16 @@ from datetime import datetime, timedelta
 
 from .parser import LogEvent
 
+
 def _filter_events_by_window(
     events: list[LogEvent],
     current_timestamp: datetime,
     window_seconds: int,
 ) -> list[LogEvent]:
-    window_start = current_timestamp - timedelta(
-        seconds=window_seconds
-    )
+    window_start = current_timestamp - timedelta(seconds=window_seconds)
 
-    return [
-        event
-        for event in events
-        if event.timestamp >= window_start
-    ]
+    return [event for event in events if event.timestamp >= window_start]
+
 
 @dataclass(frozen=True)
 class SecurityAlert:
@@ -68,6 +64,7 @@ def detect_brute_force(
 
     return alerts
 
+
 def detect_password_spraying(
     events: list[LogEvent],
     threshold: int = 3,
@@ -90,10 +87,7 @@ def detect_password_spraying(
                 window_seconds,
             )
 
-            unique_users = {
-                attempt.username
-                for attempt in attempts
-            }
+            unique_users = {attempt.username for attempt in attempts}
 
             if len(unique_users) == threshold:
                 alerts.append(
@@ -111,6 +105,7 @@ def detect_password_spraying(
             failed_users[ip_address] = []
 
     return alerts
+
 
 def detect_account_enumeration(
     events: list[LogEvent],
@@ -136,10 +131,7 @@ def detect_account_enumeration(
                 window_seconds,
             )
 
-            unique_users = {
-                attempt.username
-                for attempt in attempts
-            }
+            unique_users = {attempt.username for attempt in attempts}
 
             if len(unique_users) >= enumeration_threshold:
                 alerts.append(
@@ -159,6 +151,7 @@ def detect_account_enumeration(
             failed_users[ip_address] = []
 
     return alerts
+
 
 def detect_suspicious_success(
     events: list[LogEvent],
@@ -206,6 +199,7 @@ def detect_suspicious_success(
             failed_attempts[key] = []
 
     return alerts
+
 
 def analyze(
     events: list[LogEvent],
