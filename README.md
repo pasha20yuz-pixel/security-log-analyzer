@@ -1,5 +1,7 @@
 # Security Log Analyzer
 
+[![Tests](https://github.com/pasha20yuz-pixel/security-log-analyzer/actions/workflows/tests.yml/badge.svg)](https://github.com/pasha20yuz-pixel/security-log-analyzer/actions/workflows/tests.yml)
+
 CLI-инструмент на Python для анализа authentication logs и обнаружения подозрительной активности.
 
 Проект разработан как портфолио-проект в области Python и информационной безопасности.
