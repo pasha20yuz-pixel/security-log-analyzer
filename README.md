@@ -190,6 +190,12 @@ IP: 10.0.0.50
 Failed attempts: 3
 ```
 
+## CLI Demo
+
+Example of running the analyzer:
+
+![CLI Demo](docs/cli-demo.png)
+
 ## Configuration
 
 ### Detection Threshold
