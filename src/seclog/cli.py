@@ -32,6 +32,7 @@ def alert_to_dict(alert: SecurityAlert) -> dict:
         "username": alert.username,
         "ip_address": alert.ip_address,
         "failed_attempts": alert.failed_attempts,
+        "timestamp": alert.timestamp.isoformat(),
     }
 
 

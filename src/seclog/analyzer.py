@@ -1,8 +1,22 @@
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from .parser import LogEvent
 
+def _filter_events_by_window(
+    events: list[LogEvent],
+    current_timestamp: datetime,
+    window_seconds: int,
+) -> list[LogEvent]:
+    window_start = current_timestamp - timedelta(
+        seconds=window_seconds
+    )
+
+    return [
+        event
+        for event in events
+        if event.timestamp >= window_start
+    ]
 
 @dataclass(frozen=True)
 class SecurityAlert:
@@ -11,6 +25,7 @@ class SecurityAlert:
     username: str
     ip_address: str
     failed_attempts: int
+    timestamp: datetime
 
 
 def detect_brute_force(
@@ -30,15 +45,11 @@ def detect_brute_force(
 
             attempts.append(event)
 
-            window_start = event.timestamp - timedelta(
-                seconds=window_seconds
+            attempts[:] = _filter_events_by_window(
+                attempts,
+                event.timestamp,
+                window_seconds,
             )
-
-            attempts[:] = [
-                attempt
-                for attempt in attempts
-                if attempt.timestamp >= window_start
-            ]
 
             if len(attempts) == threshold:
                 alerts.append(
@@ -48,6 +59,7 @@ def detect_brute_force(
                         username=event.username,
                         ip_address=event.ip_address,
                         failed_attempts=len(attempts),
+                        timestamp=event.timestamp,
                     )
                 )
 
@@ -72,15 +84,11 @@ def detect_password_spraying(
             attempts = failed_users.setdefault(ip_address, [])
             attempts.append(event)
 
-            window_start = event.timestamp - timedelta(
-                seconds=window_seconds
+            attempts[:] = _filter_events_by_window(
+                attempts,
+                event.timestamp,
+                window_seconds,
             )
-
-            attempts[:] = [
-                attempt
-                for attempt in attempts
-                if attempt.timestamp >= window_start
-            ]
 
             unique_users = {
                 attempt.username
@@ -95,6 +103,7 @@ def detect_password_spraying(
                         username="*",
                         ip_address=ip_address,
                         failed_attempts=len(attempts),
+                        timestamp=event.timestamp,
                     )
                 )
 
@@ -121,15 +130,11 @@ def detect_account_enumeration(
             attempts = failed_users.setdefault(ip_address, [])
             attempts.append(event)
 
-            window_start = event.timestamp - timedelta(
-                seconds=window_seconds
+            attempts[:] = _filter_events_by_window(
+                attempts,
+                event.timestamp,
+                window_seconds,
             )
-
-            attempts[:] = [
-                attempt
-                for attempt in attempts
-                if attempt.timestamp >= window_start
-            ]
 
             unique_users = {
                 attempt.username
@@ -144,6 +149,7 @@ def detect_account_enumeration(
                         username="*",
                         ip_address=ip_address,
                         failed_attempts=len(attempts),
+                        timestamp=event.timestamp,
                     )
                 )
 
@@ -170,28 +176,20 @@ def detect_suspicious_success(
             attempts = failed_attempts.setdefault(key, [])
             attempts.append(event)
 
-            window_start = event.timestamp - timedelta(
-                seconds=window_seconds
+            attempts[:] = _filter_events_by_window(
+                attempts,
+                event.timestamp,
+                window_seconds,
             )
-
-            attempts[:] = [
-                attempt
-                for attempt in attempts
-                if attempt.timestamp >= window_start
-            ]
 
         elif event.event_type == "LOGIN_SUCCESS":
             attempts = failed_attempts.get(key, [])
 
-            window_start = event.timestamp - timedelta(
-                seconds=window_seconds
+            recent_attempts = _filter_events_by_window(
+                attempts,
+                event.timestamp,
+                window_seconds,
             )
-
-            recent_attempts = [
-                attempt
-                for attempt in attempts
-                if attempt.timestamp >= window_start
-            ]
 
             if len(recent_attempts) >= threshold:
                 alerts.append(
@@ -201,6 +199,7 @@ def detect_suspicious_success(
                         username=event.username,
                         ip_address=event.ip_address,
                         failed_attempts=len(recent_attempts),
+                        timestamp=event.timestamp,
                     )
                 )
 

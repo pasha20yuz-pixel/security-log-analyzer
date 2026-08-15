@@ -44,6 +44,7 @@ def test_detect_brute_force():
             username="admin",
             ip_address="192.168.1.10",
             failed_attempts=3,
+            timestamp=start + timedelta(seconds=4),
         )
     ]
 
@@ -219,6 +220,7 @@ def test_detect_password_spraying():
             username="*",
             ip_address="10.0.0.5",
             failed_attempts=3,
+            timestamp=start + timedelta(seconds=10),
         )
     ]
 
@@ -587,3 +589,77 @@ def test_suspicious_success_isolated_between_ips():
     assert alerts[0].username == "admin"
     assert alerts[0].ip_address == "192.168.1.10"
     assert alerts[0].failed_attempts == 3
+
+def test_account_enumeration_state_resets_after_success():
+    start = datetime(2026, 8, 13, 10, 30, 0)
+
+    events = [
+        LogEvent(
+            timestamp=start,
+            event_type="LOGIN_FAILED",
+            username="user1",
+            ip_address="10.0.0.50",
+        ),
+        LogEvent(
+            timestamp=start + timedelta(seconds=1),
+            event_type="LOGIN_FAILED",
+            username="user2",
+            ip_address="10.0.0.50",
+        ),
+        LogEvent(
+            timestamp=start + timedelta(seconds=2),
+            event_type="LOGIN_FAILED",
+            username="user3",
+            ip_address="10.0.0.50",
+        ),
+        LogEvent(
+            timestamp=start + timedelta(seconds=3),
+            event_type="LOGIN_FAILED",
+            username="user4",
+            ip_address="10.0.0.50",
+        ),
+        LogEvent(
+            timestamp=start + timedelta(seconds=4),
+            event_type="LOGIN_FAILED",
+            username="user5",
+            ip_address="10.0.0.50",
+        ),
+        LogEvent(
+            timestamp=start + timedelta(seconds=5),
+            event_type="LOGIN_SUCCESS",
+            username="user5",
+            ip_address="10.0.0.50",
+        ),
+    ]
+
+    alerts = detect_account_enumeration(events)
+
+    assert alerts == []
+
+def test_suspicious_success_not_triggered_below_threshold():
+    start = datetime(2026, 8, 13, 10, 40, 0)
+
+    events = [
+        LogEvent(
+            timestamp=start,
+            event_type="LOGIN_FAILED",
+            username="admin",
+            ip_address="192.168.1.10",
+        ),
+        LogEvent(
+            timestamp=start + timedelta(seconds=2),
+            event_type="LOGIN_FAILED",
+            username="admin",
+            ip_address="192.168.1.10",
+        ),
+        LogEvent(
+            timestamp=start + timedelta(seconds=4),
+            event_type="LOGIN_SUCCESS",
+            username="admin",
+            ip_address="192.168.1.10",
+        ),
+    ]
+
+    alerts = detect_suspicious_success(events)
+
+    assert alerts == []
